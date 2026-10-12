@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraSign | Real-Time Neural Sign Language Translator</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: {
+              deep: '#05060a',
+              dark: '#080a12',
+              card: '#0d101d',
+              panel: '#13182b',
+              border: '#1f253d'
+            },
+            neon: {
+              mint: '#00f5a0',
+              'mint-dim': '#00d68b',
+              violet: '#8b5cf6',
+              'violet-dim': '#7c3aed',
+              cyan: '#06b6d4',
+              red: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts for High-Contrast Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- MediaPipe Hands & Camera Utils CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-obsidian-deep text-slate-100 min-h-screen flex flex-col selection:bg-neon-mint selection:text-obsidian-deep">
+
+  <!-- Cybernetic Background Grid & Scanline Effect -->
+  <div class="fixed inset-0 cyber-scanline pointer-events-none z-50 opacity-40"></div>
+
+  <!-- Header / Navigation Bar -->
+  <header class="border-b border-obsidian-border bg-obsidian-dark/90 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 py-3.5 flex items-center justify-between">
+    <!-- Brand Info -->
+    <div class="flex items-center gap-3.5">
+      <div class="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-neon-mint p-0.5 shadow-neon-mint flex items-center justify-center">
+        <div class="w-full h-full bg-obsidian-deep rounded-[10px] flex items-center justify-center">
+          <svg class="w-6 h-6 text-neon-mint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+            <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path>
+            <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path>
+            <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path>
+          </svg>
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white font-mono flex items-center gap-1.5">
+            Aura<span class="text-neon-mint">Sign</span>
+          </h1>
+          <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded-full bg-violet-950 text-violet-300 border border-violet-700/50">
+            Neural v2.4
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 font-normal">Real-Time Sign Language Translator & Flashcard Engine</p>
+      </div>
+    </div>
+
+    <!-- Header Action Controls -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <!-- High Contrast Toggle (WCAG AAA) -->
+      <button id="btn-contrast-toggle" class="px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-neon-mint bg-obsidian-card text-xs font-medium text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Toggle High Contrast Accessible Mode">
+        <svg class="w-4 h-4 text-neon-mint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"/></svg>
+        <span class="hidden md:inline">High Contrast</span>
+      </button>
+
+      <!-- Audio Feedback Mute Toggle -->
+      <button id="btn-sound-toggle" class="p-2 rounded-lg border border-slate-700 hover:border-violet-500 bg-obsidian-card text-slate-300 hover:text-white transition" title="Toggle Futuristic SFX Audio Cues">
+        <svg id="icon-sound-on" class="w-4 h-4 text-neon-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+        <svg id="icon-sound-off" class="w-4 h-4 text-slate-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
+      </button>
+
+      <!-- ASL Signs Glossary Button -->
+      <button id="btn-glossary" class="px-3 py-1.5 rounded-lg border border-violet-600/60 bg-violet-950/40 hover:bg-violet-900/50 text-xs font-semibold text-violet-300 hover:text-white transition flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+        <span>Signs Guide</span>
+      </button>
+
+      <!-- Keyboard Shortcuts Help -->
+      <button id="btn-shortcuts" class="p-2 rounded-lg border border-slate-700 hover:border-slate-500 bg-obsidian-card text-slate-400 hover:text-white transition" title="View Keyboard Shortcuts">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+
+    <!-- TOP SECTION: Two-Column Live Translator (Webcam Left / Dynamic Typography Right) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      
+      <!-- LEFT COLUMN: Live Camera Feed & Hand Tracking Canvas Overlay (7 Cols) -->
+      <div class="lg:col-span-7 flex flex-col gap-3">
+        
+        <!-- Video Feed Container -->
+        <div class="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-obsidian-dark rounded-2xl overflow-hidden border border-obsidian-border shadow-2xl flex items-center justify-center group">
+          
+          <!-- Underlying Video Element -->
+          <video id="webcam-video" playsinline muted autoplay class="w-full h-full object-cover transform -scale-x-100"></video>
+          
+          <!-- Overlay Canvas for Hand Tracking Landmarks & Futuristic Skeleton HUD -->
+          <canvas id="overlay-canvas" class="absolute inset-0 w-full h-full z-10"></canvas>
+
+          <!-- Top HUD Overlay Status Badges -->
+          <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-20 pointer-events-none">
+            <!-- Tracking Status Pill -->
+            <div id="hud-status-badge" class="px-3 py-1 rounded-full bg-obsidian-deep/85 border border-slate-700/80 backdrop-blur-md flex items-center gap-2 text-xs font-mono">
+              <span id="hud-status-dot" class="w-2.5 h-2.5 rounded-full bg-violet-400 animate-pulse"></span>
+              <span id="hud-status-text" class="text-slate-300 font-semibold tracking-wide">INITIALIZING ENGINE</span>
+            </div>
+
+            <!-- FPS and Hand Metric -->
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <div class="px-2.5 py-1 rounded-full bg-obsidian-deep/85 border border-slate-700/80 backdrop-blur-md text-neon-mint flex items-center gap-1.5">
+                <span class="text-[10px] text-slate-500 uppercase">FPS</span>
+                <span id="hud-fps" class="font-bold">--</span>
+              </div>
+              <div id="hud-hand-badge" class="hidden sm:flex px-2.5 py-1 rounded-full bg-obsidian-deep/85 border border-slate-700/80 backdrop-blur-md text-violet-300">
+                <span id="hud-hand-text">NO HAND</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hold-to-Commit Holographic Circular Progress Ring (Bottom-Right of Canvas) -->
+          <div id="hud-hold-container" class="absolute bottom-4 right-4 z-20 pointer-events-none flex flex-col items-center opacity-0 transition-opacity duration-200">
+            <div class="relative w-16 h-16 flex items-center justify-center">
+              <svg class="w-16 h-16" viewBox="0 0 60 60">
+                <circle cx="30" cy="30" r="24" stroke="#1f253d" stroke-width="4" fill="none" />
+                <circle id="commit-progress-ring" class="progress-ring-circle" cx="30" cy="30" r="24" stroke="#00f5a0" stroke-width="4.5" fill="none" stroke-dasharray="150.79" stroke-dashoffset="150.79" stroke-linecap="round" />
+              </svg>
+              <span id="commit-countdown-text" class="absolute font-mono text-[11px] font-bold text-neon-mint">HOLD</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider bg-obsidian-deep/80 px-2 py-0.5 rounded">Auto-Commit</span>
+          </div>
+
+          <!-- Fallback Splash when Camera is inactive -->
+          <div id="camera-splash" class="absolute inset-0 bg-obsidian-dark/95 flex flex-col items-center justify-center p-6 text-center z-15">
+            <div class="w-16 h-16 rounded-2xl bg-violet-950/40 border border-violet-500/40 flex items-center justify-center text-neon-mint mb-4 shadow-neon-mint">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Connect Webcam to Begin</h3>
+            <p class="text-xs text-slate-400 max-w-sm mb-5 leading-relaxed">
+              Position your hand in front of the camera. AuraSign will instantly track your joints and translate ASL gestures in real time.
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+              <button id="btn-splash-start" class="px-5 py-2.5 rounded-xl bg-neon-mint text-obsidian-deep font-bold text-xs tracking-wider uppercase hover:bg-neon-mint-dim transition shadow-neon-mint flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Start Webcam Feed
+              </button>
+              <button id="btn-splash-demo" class="px-4 py-2.5 rounded-xl border border-violet-500/60 bg-violet-950/40 text-violet-300 font-semibold text-xs tracking-wider uppercase hover:bg-violet-900/40 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                Launch Simulator Demo
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Video Controls Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-obsidian-card p-2.5 rounded-xl border border-obsidian-border text-xs">
+          <!-- Primary Actions -->
+          <div class="flex items-center gap-2">
+            <button id="btn-toggle-camera" class="px-3.5 py-1.5 rounded-lg bg-neon-mint text-obsidian-deep font-bold hover:bg-neon-mint-dim transition flex items-center gap-1.5 shadow-neon-mint">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              <span id="btn-camera-text">Start Camera</span>
+            </button>
+
+            <!-- Simulator Mode Selector -->
+            <div class="flex items-center gap-1.5 bg-obsidian-panel px-2.5 py-1 rounded-lg border border-slate-800">
+              <span class="text-slate-400 font-mono text-[11px]">Simulator:</span>
+              <select id="select-demo-gesture" class="bg-transparent text-neon-mint font-semibold text-[11px] focus:outline-none cursor-pointer">
+                <option value="HELLO" class="bg-obsidian-dark text-white">Sign: Hello</option>
+                <option value="PEACE" class="bg-obsidian-dark text-white">Sign: Peace</option>
+                <option value="I LOVE YOU" class="bg-obsidian-dark text-white">Sign: I Love You</option>
+                <option value="OK" class="bg-obsidian-dark text-white">Sign: OK / Perfect</option>
+                <option value="GOOD" class="bg-obsidian-dark text-white">Sign: Good (Thumbs Up)</option>
+                <option value="YES" class="bg-obsidian-dark text-white">Sign: Yes (Fist)</option>
+                <option value="POINTING" class="bg-obsidian-dark text-white">Sign: Pointing / You</option>
+              </select>
+              <button id="btn-run-demo" class="px-2 py-0.5 rounded bg-violet-600 hover:bg-violet-500 text-white font-mono text-[10px] transition" title="Run synthetic gesture simulation">
+                Simulate
+              </button>
+            </div>
+          </div>
+
+          <!-- Video Options / Toggles -->
+          <div class="flex items-center gap-2 text-slate-400">
+            <button id="btn-toggle-mirror" class="p-1.5 rounded-lg hover:bg-slate-800 hover:text-white transition" title="Flip / Mirror Video Feed">
+              <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+            </button>
+            <button id="btn-toggle-skeleton" class="px-2 py-1 rounded-lg bg-obsidian-panel border border-slate-800 text-[11px] text-slate-300 hover:text-white transition" title="Toggle Skeleton Lines">
+              Skeleton: <span id="label-skeleton-state" class="text-neon-mint font-semibold">ON</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Dynamic Typography Panel & Sentence Engine (5 Cols) -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        
+        <!-- ACTIVE LIVE SIGN DISPLAY (Futuristic Hero Typography) -->
+        <div class="relative bg-gradient-to-br from-obsidian-card to-obsidian-panel p-5 rounded-2xl border border-obsidian-border shadow-xl flex flex-col justify-between min-h-[220px]">
+          
+          <!-- Panel Header -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-neon-mint animate-ping"></span>
+              <span class="text-[11px] font-mono uppercase tracking-widest text-slate-400 font-semibold">
+                Live Translation Output
+              </span>
+            </div>
+            <!-- Confidence Meter -->
+            <div class="flex items-center gap-1.5 text-xs font-mono">
+              <span class="text-slate-400 text-[11px]">Match:</span>
+              <span id="active-confidence-val" class="font-bold text-neon-mint">--%</span>
+            </div>
+          </div>
+
+          <!-- Hero Sign Word Typography -->
+          <div class="my-4 text-center">
+            <div id="active-sign-text" class="text-4xl sm:text-5xl font-black tracking-tight text-white font-mono sign-display-active drop-shadow-lg">
+              Waiting for sign...
+            </div>
+            <p id="active-sign-desc" class="text-xs text-slate-400 mt-2 font-sans line-clamp-2 max-w-sm mx-auto">
+              Perform an ASL gesture in view of the webcam.
+            </p>
+          </div>
+
+          <!-- Hold Progress Line & Commit Shortcut -->
+          <div>
+            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden mb-2 border border-slate-800">
+              <div id="hold-progress-bar" class="bg-gradient-to-r from-violet-500 to-neon-mint h-full w-0 transition-all duration-75"></div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+              <span>Hold sign to commit</span>
+              <button id="btn-manual-commit" class="text-neon-mint hover:underline font-semibold" title="Commit current sign immediately (Spacebar)">
+                Commit [Space]
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SENTENCE BUILDER / DISCOURSE ACCUMULATOR -->
+        <div class="flex-1 bg-obsidian-card p-5 rounded-2xl border border-obsidian-border shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="sentence-display" class="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+                Assembled Sentence
+              </label>
+              
+              <!-- Word Count Badge -->
+              <span id="sentence-word-count" class="text-[11px] font-mono text-slate-400">0 words</span>
+            </div>
+
+            <!-- Accumulated Text Area (High Contrast, Large Typography) -->
+            <div id="sentence-display" class="w-full min-h-[90px] p-3.5 rounded-xl bg-obsidian-dark border border-slate-800 text-white font-mono text-lg sm:text-xl font-bold tracking-wide focus:outline-none custom-scrollbar overflow-y-auto leading-relaxed" tabindex="0" role="textbox" aria-live="polite">
+              <span class="text-slate-600 italic font-normal text-sm select-none">Translated signs will accumulate here into sentences...</span>
+            </div>
+          </div>
+
+          <!-- Sentence Action Toolbar -->
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+            <!-- TTS Reading Button with Animated Wave -->
+            <button id="btn-speak-sentence" class="px-3.5 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-medium text-xs transition flex items-center gap-2 shadow-neon-violet" title="Speak sentence aloud via Text-to-Speech (P)">
+              <div id="tts-wave-container" class="hidden items-end gap-0.5 h-4">
+                <span class="audio-bar w-0.5 bg-neon-mint rounded-full"></span>
+                <span class="audio-bar w-0.5 bg-neon-mint rounded-full"></span>
+                <span class="audio-bar w-0.5 bg-neon-mint rounded-full"></span>
+                <span class="audio-bar w-0.5 bg-neon-mint rounded-full"></span>
+              </div>
+              <svg id="tts-speaker-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+              <span>Speak Aloud</span>
+            </button>
+
+            <!-- Editing Controls (Backspace, Space, Copy, Clear) -->
+            <div class="flex items-center gap-1.5">
+              <button id="btn-add-space" class="px-2.5 py-1.5 rounded-lg bg-obsidian-panel border border-slate-800 hover:border-slate-600 text-slate-300 hover:text-white text-xs font-mono transition" title="Add space between words">
+                Space
+              </button>
+              <button id="btn-backspace" class="p-1.5 rounded-lg bg-obsidian-panel border border-slate-800 hover:border-slate-600 text-slate-300 hover:text-white text-xs transition" title="Delete last sign (Backspace)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" /></svg>
+              </button>
+              <button id="btn-copy-sentence" class="p-1.5 rounded-lg bg-obsidian-panel border border-slate-800 hover:border-slate-600 text-slate-300 hover:text-white text-xs transition" title="Copy sentence to clipboard">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              </button>
+              <button id="btn-clear-sentence" class="px-2.5 py-1.5 rounded-lg bg-obsidian-panel border border-slate-800 hover:border-red-500 text-slate-400 hover:text-red-400 text-xs transition" title="Clear all text (C)">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <!-- Translation Stream History Feed -->
+          <div class="mt-4 pt-3 border-t border-slate-800/80">
+            <div class="flex items-center justify-between mb-1.5 text-[11px] font-mono text-slate-400">
+              <span>Recent Sign History</span>
+              <span id="history-count">0 recorded</span>
+            </div>
+            <div id="history-stream" class="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto custom-scrollbar">
+              <span class="text-xs text-slate-600 italic">No signs committed yet.</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- BOTTOM SECTION: REVERSE TRANSLATION PANEL (Speech & Text -> Visual Sign Flashcards) -->
+    <div class="bg-obsidian-card rounded-2xl border border-obsidian-border p-5 sm:p-6 shadow-2xl flex flex-col gap-5">
+      
+      <!-- Reverse Translation Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-violet-400"></div>
+            <h2 class="text-lg sm:text-xl font-bold text-white font-mono tracking-tight">
+              Reverse Translation: <span class="text-violet-400">Voice / Text → Sign Flashcards</span>
+            </h2>
+          </div>
+          <p class="text-xs text-slate-400 mt-1 max-w-2xl">
+            Speak into your microphone or type English phrases. AuraSign will translate your words into animated visual flashcards with high-contrast hand posture illustrations.
+          </p>
+        </div>
+
+        <!-- Mic Status Pill -->
+        <div id="mic-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-obsidian-panel border border-slate-800 self-start sm:self-auto">
+          <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+          <span class="text-slate-400 text-xs font-mono">MIC IDLE</span>
+        </div>
+      </div>
+
+      <!-- Speech Input & Typing Bar -->
+      <div class="flex flex-col sm:flex-row items-stretch gap-3">
+        
+        <!-- Microphone Button with Pulsing Glow -->
+        <button id="btn-mic-toggle" class="px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs tracking-wider uppercase transition flex items-center justify-center gap-2.5 shadow-neon-violet group shrink-0">
+          <svg id="mic-icon" class="w-5 h-5 text-neon-mint group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg>
+          <span id="btn-mic-text">Start Mic Input</span>
+        </button>
+
+        <!-- Text Input Form -->
+        <form id="form-reverse-text" class="flex-1 flex items-stretch gap-2">
+          <div class="relative flex-1">
+            <input type="text" id="input-reverse-text" placeholder="Or type any sentence (e.g. 'Hello', 'Thank you', 'I love you', 'Please help')..." class="w-full h-full px-4 py-2.5 rounded-xl bg-obsidian-dark border border-slate-700/80 text-white text-sm focus:border-neon-mint focus:outline-none font-mono placeholder:text-slate-600 transition" />
+          </div>
+          <button type="submit" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-neon-mint font-semibold text-xs transition flex items-center gap-1.5 shrink-0">
+            <span>Render Signs</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+          </button>
+        </form>
+
+      </div>
+
+      <!-- Quick Test Prompt Chips -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar text-xs">
+        <span class="text-[11px] font-mono text-slate-500 shrink-0">Quick Prompts:</span>
+        <button class="prompt-chip px-2.5 py-1 rounded-lg bg-obsidian-panel hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-neon-mint transition shrink-0 font-mono text-[11px]">"Hello"</button>
+        <button class="prompt-chip px-2.5 py-1 rounded-lg bg-obsidian-panel hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-neon-mint transition shrink-0 font-mono text-[11px]">"Thank You"</button>
+        <button class="prompt-chip px-2.5 py-1 rounded-lg bg-obsidian-panel hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-neon-mint transition shrink-0 font-mono text-[11px]">"I Love You"</button>
+        <button class="prompt-chip px-2.5 py-1 rounded-lg bg-obsidian-panel hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-neon-mint transition shrink-0 font-mono text-[11px]">"Please Help"</button>
+        <button class="prompt-chip px-2.5 py-1 rounded-lg bg-obsidian-panel hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-neon-mint transition shrink-0 font-mono text-[11px]">"Water Please"</button>
+        <button class="prompt-chip px-2.5 py-1 rounded-lg bg-obsidian-panel hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-neon-mint transition shrink-0 font-mono text-[11px]">"Peace"</button>
+        <button class="prompt-chip px-2.5 py-1 rounded-lg bg-obsidian-panel hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-neon-mint transition shrink-0 font-mono text-[11px]">"Yes"</button>
+        <button class="prompt-chip px-2.5 py-1 rounded-lg bg-obsidian-panel hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-neon-mint transition shrink-0 font-mono text-[11px]">"Good"</button>
+      </div>
+
+      <!-- Live Mic / Text Transcript Preview -->
+      <div class="px-3.5 py-2 rounded-lg bg-obsidian-panel/60 border border-slate-800/80 text-xs font-mono flex items-center gap-2">
+        <span class="text-violet-400 font-bold uppercase text-[10px]">Spoken Transcript:</span>
+        <span id="reverse-transcript-text" class="text-slate-300 italic">No audio recorded yet...</span>
+      </div>
+
+      <!-- Flashcards Container Element (Populated by reverse-translator.js) -->
+      <div id="flashcards-container" class="mt-1">
+        <!-- Rendered by reverse-translator.js -->
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-obsidian-border bg-obsidian-dark py-4 px-6 text-center text-xs text-slate-500 font-mono">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-neon-mint"></span>
+        <span>AuraSign Neural Core • Deep Obsidian & Neon Mint Accessibility Theme</span>
+      </div>
+      <div>
+        <span>Keyboard: [Space] Commit • [Backspace] Undo • [M] Mic • [C] Clear • [P] TTS</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL: ASL Signs Glossary & How-To Guide -->
+  <div id="modal-glossary" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-obsidian-card border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-obsidian-dark">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-neon-mint"></div>
+          <h3 class="text-lg font-bold text-white font-mono">ASL Recognized Gestures Guide</h3>
+        </div>
+        <button id="btn-close-glossary" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Perform these gestures clearly in view of your camera. AuraSign will compute 3D finger angles and geometry to detect them:
+        </p>
+        <div id="glossary-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-obsidian-dark flex justify-end">
+        <button id="btn-close-glossary-2" class="px-4 py-2 rounded-xl bg-neon-mint text-obsidian-deep font-bold text-xs">
+          Got It, Close Guide
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Keyboard Shortcuts -->
+  <div id="modal-shortcuts" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-obsidian-card border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl p-5">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <h3 class="text-base font-bold text-white font-mono">Accessible Hotkeys</h3>
+        <button id="btn-close-shortcuts" class="text-slate-400 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div class="space-y-2 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 rounded bg-obsidian-panel border border-slate-800">
+          <span class="text-slate-300">Commit current sign</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-neon-mint font-bold border border-slate-700">Space</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded bg-obsidian-panel border border-slate-800">
+          <span class="text-slate-300">Delete last sign</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-neon-mint font-bold border border-slate-700">Backspace</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded bg-obsidian-panel border border-slate-800">
+          <span class="text-slate-300">Toggle Microphone</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-neon-mint font-bold border border-slate-700">M</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded bg-obsidian-panel border border-slate-800">
+          <span class="text-slate-300">Clear sentence</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-neon-mint font-bold border border-slate-700">C</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded bg-obsidian-panel border border-slate-800">
+          <span class="text-slate-300">Speak sentence (TTS)</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-neon-mint font-bold border border-slate-700">P</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded bg-obsidian-panel border border-slate-800">
+          <span class="text-slate-300">Toggle camera feed</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-neon-mint font-bold border border-slate-700">S</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 px-4 py-2.5 rounded-xl bg-obsidian-panel border border-neon-mint/80 text-white font-mono text-xs shadow-neon-mint flex items-center gap-2">
+    <span id="toast-icon">✓</span>
+    <span id="toast-message">Notification</span>
+  </div>
+
+  <!-- Main JavaScript App Coordinator -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

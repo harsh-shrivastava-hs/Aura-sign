@@ -1,0 +1,169 @@
+/* AuraSign - Futuristic High-Contrast Accessible Stylesheet */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-obsidian-deep: #05060a;
+  --bg-obsidian-card: #0b0d17;
+  --bg-obsidian-panel: #111422;
+  --accent-mint: #00f5a0;
+  --accent-mint-glow: rgba(0, 245, 160, 0.4);
+  --accent-violet: #8b5cf6;
+  --accent-violet-glow: rgba(139, 92, 246, 0.4);
+  --text-high-contrast: #ffffff;
+  --text-sub: #cbd5e1;
+}
+
+/* Base Body & Layout */
+body {
+  background-color: var(--bg-obsidian-deep);
+  color: #f8fafc;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #090a12;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #232842;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-mint);
+}
+
+/* Cybernetic Neon Glows */
+.shadow-neon-mint {
+  box-shadow: 0 0 20px -2px rgba(0, 245, 160, 0.35), 0 0 8px 0 rgba(0, 245, 160, 0.2);
+}
+
+.shadow-neon-violet {
+  box-shadow: 0 0 20px -2px rgba(139, 92, 246, 0.4), 0 0 8px 0 rgba(139, 92, 246, 0.25);
+}
+
+.text-glow-mint {
+  text-shadow: 0 0 16px rgba(0, 245, 160, 0.6), 0 0 4px rgba(0, 245, 160, 0.8);
+}
+
+.text-glow-violet {
+  text-shadow: 0 0 16px rgba(139, 92, 246, 0.6), 0 0 4px rgba(139, 92, 246, 0.8);
+}
+
+/* Scanline / Futuristic Grid Overlay */
+.cyber-scanline {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 245, 160, 0.02) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.01),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.01)
+  );
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
+}
+
+/* Dynamic Typography Transitions */
+.sign-display-active {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease-in-out;
+}
+
+.sign-display-pulse {
+  animation: signPulse 0.4s ease-out;
+}
+
+@keyframes signPulse {
+  0% {
+    transform: scale(0.92);
+    filter: brightness(0.8);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: brightness(1.3);
+  }
+  100% {
+    transform: scale(1.0);
+    filter: brightness(1.0);
+  }
+}
+
+/* Hold-to-Commit Circular Progress Animation */
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.08s linear;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* Audio Visualizer Wave Bars */
+.audio-bar {
+  animation: audioBounce 1.2s ease-in-out infinite alternate;
+}
+
+.audio-bar:nth-child(2) { animation-delay: 0.15s; }
+.audio-bar:nth-child(3) { animation-delay: 0.3s; }
+.audio-bar:nth-child(4) { animation-delay: 0.45s; }
+.audio-bar:nth-child(5) { animation-delay: 0.2s; }
+
+@keyframes audioBounce {
+  0% { height: 4px; }
+  100% { height: 22px; }
+}
+
+/* Accessibility Focus States */
+button:focus-visible, 
+input:focus-visible, 
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-mint) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 12px var(--accent-mint-glow);
+}
+
+/* WCAG AAA High Contrast Booster Mode */
+body.high-contrast {
+  --bg-obsidian-deep: #000000;
+  --bg-obsidian-card: #050508;
+  --bg-obsidian-panel: #0a0a0f;
+  --text-high-contrast: #ffffff;
+}
+
+body.high-contrast .border-slate-800,
+body.high-contrast .border-slate-700 {
+  border-color: #3b4261 !important;
+}
+
+body.high-contrast .text-slate-400,
+body.high-contrast .text-slate-500 {
+  color: #e2e8f0 !important;
+}
+
+body.high-contrast .bg-obsidian-dark,
+body.high-contrast .bg-obsidian-card {
+  border-width: 2px !important;
+}
+
+/* Glassmorphism Accents */
+.glass-panel {
+  background: rgba(13, 16, 27, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Toast Notifications */
+#toast-notification {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
