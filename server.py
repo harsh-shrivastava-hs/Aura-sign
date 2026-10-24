@@ -62,26 +62,6 @@ def print_banner(port, url):
     violet = "\033[95m" if os.name != 'nt' or 'WT_SESSION' in os.environ else ""
     reset = "\033[0m" if os.name != 'nt' or 'WT_SESSION' in os.environ else ""
 
-    print(r"""
-========================================================================
-   ___                        ___ _             
-  / _ \ _   _ _ __ __ _      / __(_) __ _ _ __  
- / /_\ \ | | | '__/ _` |_____\__ \ |/ _` | '_ \ 
-/ /_\\ \ |_| | | | (_| |_____|___/ |_|\__, |_| |_|
-\____/\__,_|_|  \__,_|     |___/   |___/      
-========================================================================
-   Real-Time Sign Language Translator & Flashcard Engine
-------------------------------------------------------------------------
-   • Local URL        : """ + url + r"""
-   • Serving Directory: """ + DIRECTORY + r"""
-   • Status           : ONLINE & READY
-   • Features         : Live Webcam CV, MediaPipe Hands,
-                        Reverse Translation, Flashcards & TTS
-------------------------------------------------------------------------
-   Press Ctrl+C to terminate the local server.
-========================================================================
-""")
-
 def run_server(port=None, auto_open=True):
     actual_port = find_available_port(port or DEFAULT_PORT)
     url = f"http://localhost:{actual_port}"
