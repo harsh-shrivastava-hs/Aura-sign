@@ -1,8 +1,8 @@
 /**
  * AuraSign - Hand Tracking & Computer Vision Overlay Engine
  * Integrates MediaPipe Hands with a high-performance Canvas 2D overlay renderer.
- * Features futuristic neon mint / electric violet visualizer, smooth interpolation,
- * FPS counter, HUD reticles, and fallback synthetic CV simulator mode.
+ * Features futuristic neon mint / electric violet visualizer, ghost hand stencils for tutorials,
+ * alignment silhouettes, FPS counter, HUD reticles, and fallback synthetic CV simulator mode.
  */
 
 import { SYNTHETIC_GESTURE_PRESETS } from './sign-database.js';
@@ -43,6 +43,11 @@ export class HandTracker {
     this.showSkeleton = true;
     this.showLandmarks = true;
     this.showBoundingBox = true;
+
+    // Tutorial & alignment guidance overlays
+    this.targetGhostPreset = null;
+    this.showGhostHand = true;
+    this.showAlignmentGuide = true;
 
     // Performance metrics
     this.frameCount = 0;
@@ -99,6 +104,10 @@ export class HandTracker {
     }
   }
 
+  setGhostTarget(presetName) {
+    this.targetGhostPreset = presetName;
+  }
+
   /**
    * Start real camera feed
    */
@@ -125,7 +134,6 @@ export class HandTracker {
       this.resizeCanvas();
       this.reportStatus('tracking', 'Camera Online - Tracking Active');
 
-      // Setup processing loop
       this.startProcessingLoop();
       return true;
     } catch (err) {
@@ -135,7 +143,6 @@ export class HandTracker {
       else if (err.name === 'NotFoundError') errMsg = 'No webcam hardware detected.';
 
       this.reportStatus('error', errMsg);
-      // Auto-fallback to simulator demo mode
       this.startDemoMode();
       return false;
     }
@@ -170,7 +177,7 @@ export class HandTracker {
         try {
           await this.mediaPipeHands.send({ image: this.videoElement });
         } catch (e) {
-          // If wasm is still warming up, catch quietly
+          // Quiet warmup catch
         }
       }
 
@@ -187,6 +194,11 @@ export class HandTracker {
     if (this.isDemoMode) return;
 
     this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+
+    // If a tutorial target ghost is set, draw it behind the active hand
+    if (this.showGhostHand && this.targetGhostPreset) {
+      this.drawGhostHand(this.targetGhostPreset);
+    }
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
       const rawLandmarks = results.multiHandLandmarks[0];
@@ -210,8 +222,12 @@ export class HandTracker {
       }
     } else {
       this.smoothedLandmarks = null;
-      // Draw subtle searching reticle
+      // Draw subtle searching reticle & alignment silhouette
       this.drawSearchingHud();
+      if (this.showAlignmentGuide) {
+        this.drawAlignmentSilhouette();
+      }
+
       if (this.onResultsCallback) {
         this.onResultsCallback({ landmarks: null, handedness: null });
       }
@@ -238,8 +254,7 @@ export class HandTracker {
   }
 
   /**
-   * Demo / Simulator Mode:
-   * Generates live synthetic hand landmarks with lifelike swaying animation
+   * Demo / Simulator Mode
    */
   startDemoMode(preset = 'HELLO') {
     this.stopCamera();
@@ -256,7 +271,6 @@ export class HandTracker {
       const time = (performance.now() - startTime) / 1000;
       const basePreset = SYNTHETIC_GESTURE_PRESETS[this.demoPreset] || SYNTHETIC_GESTURE_PRESETS['HELLO'];
 
-      // Add gentle lifelike natural motion
       const swayX = Math.sin(time * 1.5) * 0.015;
       const swayY = Math.cos(time * 2.0) * 0.012;
       const fingerTwitch = Math.sin(time * 4) * 0.005;
@@ -267,16 +281,15 @@ export class HandTracker {
         z: pt.z || 0
       }));
 
-      // Render on canvas
       this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-      
-      // Draw simulated camera backdrop if real video is offline
       this.drawSimulatedBackground();
 
-      // Render futuristic hand overlay
+      if (this.showGhostHand && this.targetGhostPreset) {
+        this.drawGhostHand(this.targetGhostPreset);
+      }
+
       this.drawHandOverlay(animatedLandmarks);
 
-      // Pass to recognizer
       if (this.onResultsCallback) {
         this.onResultsCallback({
           landmarks: animatedLandmarks,
@@ -313,13 +326,124 @@ export class HandTracker {
   }
 
   /**
+   * Draw Ghost Hand Holographic Target Stencil
+   * Displays the canonical target pose so the user can align their hand inside it!
+   */
+  drawGhostHand(presetName) {
+    const preset = SYNTHETIC_GESTURE_PRESETS[presetName];
+    if (!preset) return;
+
+    const w = this.canvasElement.width;
+    const h = this.canvasElement.height;
+
+    const points = preset.map(lm => ({
+      x: this.mirrored ? (1 - lm.x) * w : lm.x * w,
+      y: lm.y * h
+    }));
+
+    this.ctx.save();
+    this.ctx.lineWidth = 2.5;
+    this.ctx.lineCap = 'round';
+    this.ctx.setLineDash([5, 5]);
+    this.ctx.strokeStyle = 'rgba(6, 182, 212, 0.45)'; // Holographic cyan glow
+    this.ctx.shadowBlur = 10;
+    this.ctx.shadowColor = 'rgba(6, 182, 212, 0.6)';
+
+    // Draw ghost connections
+    for (const [startIdx, endIdx] of HAND_CONNECTIONS) {
+      const p1 = points[startIdx];
+      const p2 = points[endIdx];
+      this.ctx.beginPath();
+      this.ctx.moveTo(p1.x, p1.y);
+      this.ctx.lineTo(p2.x, p2.y);
+      this.ctx.stroke();
+    }
+
+    this.ctx.setLineDash([]);
+
+    // Draw ghost target joint rings
+    points.forEach((pt, idx) => {
+      const isFingertip = [4, 8, 12, 16, 20].includes(idx);
+      const radius = isFingertip ? 7 : 4;
+
+      this.ctx.beginPath();
+      this.ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+      this.ctx.fillStyle = 'rgba(6, 182, 212, 0.25)';
+      this.ctx.fill();
+
+      this.ctx.beginPath();
+      this.ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+      this.ctx.strokeStyle = 'rgba(6, 182, 212, 0.7)';
+      this.ctx.lineWidth = 1.5;
+      this.ctx.stroke();
+    });
+
+    // Ghost tag label
+    this.ctx.fillStyle = 'rgba(6, 182, 212, 0.85)';
+    this.ctx.font = 'bold 11px monospace';
+    this.ctx.fillText(`TARGET STENCIL: ${presetName}`, points[0].x - 60, points[0].y + 26);
+
+    this.ctx.restore();
+  }
+
+  /**
+   * Draw subtle Hand Alignment Silhouette when camera is searching
+   */
+  drawAlignmentSilhouette() {
+    const w = this.canvasElement.width;
+    const h = this.canvasElement.height;
+    const cx = w / 2;
+    const cy = h / 2 + 10;
+
+    this.ctx.save();
+    this.ctx.strokeStyle = 'rgba(139, 92, 246, 0.2)';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.setLineDash([4, 4]);
+
+    // Draw stylized guide hand outline
+    this.ctx.beginPath();
+    // Wrist base
+    this.ctx.moveTo(cx - 35, cy + 90);
+    this.ctx.lineTo(cx - 40, cy + 30);
+    // Thumb
+    this.ctx.lineTo(cx - 75, cy - 10);
+    this.ctx.arc(cx - 70, cy - 25, 10, Math.PI, 0);
+    this.ctx.lineTo(cx - 40, cy);
+    // Index
+    this.ctx.lineTo(cx - 35, cy - 80);
+    this.ctx.arc(cx - 26, cy - 80, 9, Math.PI, 0);
+    this.ctx.lineTo(cx - 17, cy - 20);
+    // Middle
+    this.ctx.lineTo(cx - 10, cy - 95);
+    this.ctx.arc(cx, cy - 95, 10, Math.PI, 0);
+    this.ctx.lineTo(cx + 10, cy - 20);
+    // Ring
+    this.ctx.lineTo(cx + 17, cy - 85);
+    this.ctx.arc(cx + 26, cy - 85, 9, Math.PI, 0);
+    this.ctx.lineTo(cx + 35, cy - 15);
+    // Pinky
+    this.ctx.lineTo(cx + 42, cy - 65);
+    this.ctx.arc(cx + 50, cy - 65, 8, Math.PI, 0);
+    this.ctx.lineTo(cx + 45, cy + 35);
+    this.ctx.lineTo(cx + 35, cy + 90);
+    this.ctx.stroke();
+
+    this.ctx.setLineDash([]);
+    this.ctx.fillStyle = 'rgba(139, 92, 246, 0.6)';
+    this.ctx.font = '11px monospace';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText('ALIGN HAND HERE IN FRONT OF CAMERA', cx, cy + 120);
+
+    this.ctx.restore();
+  }
+
+  /**
    * Draw high-contrast futuristic hand skeleton and tracking nodes
    */
   drawHandOverlay(landmarks) {
     const w = this.canvasElement.width;
     const h = this.canvasElement.height;
 
-    // Map normalized coordinates to canvas space (with optional mirror flip)
     const points = landmarks.map(lm => ({
       x: this.mirrored ? (1 - lm.x) * w : lm.x * w,
       y: lm.y * h,
@@ -332,8 +456,6 @@ export class HandTracker {
       this.ctx.lineWidth = 3.5;
       this.ctx.lineCap = 'round';
       this.ctx.lineJoin = 'round';
-
-      // Outer glow for cyberpunk neon effect
       this.ctx.shadowBlur = 12;
       this.ctx.shadowColor = '#00f5a0';
 
@@ -341,7 +463,6 @@ export class HandTracker {
         const p1 = points[startIdx];
         const p2 = points[endIdx];
 
-        // Gradient bone connection from electric violet to neon mint
         const grad = this.ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
         grad.addColorStop(0, '#8b5cf6');
         grad.addColorStop(1, '#00f5a0');
@@ -365,17 +486,14 @@ export class HandTracker {
 
         const radius = isFingertip ? 6 : (isWrist ? 7 : 4);
 
-        // Outer glow
         this.ctx.shadowBlur = isFingertip ? 15 : 8;
         this.ctx.shadowColor = isFingertip ? '#00f5a0' : '#8b5cf6';
 
-        // Outer circle
         this.ctx.beginPath();
         this.ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
         this.ctx.fillStyle = isFingertip ? '#00f5a0' : '#8b5cf6';
         this.ctx.fill();
 
-        // Inner glowing core
         this.ctx.beginPath();
         this.ctx.arc(pt.x, pt.y, radius * 0.45, 0, Math.PI * 2);
         this.ctx.fillStyle = '#ffffff';
@@ -413,29 +531,25 @@ export class HandTracker {
     this.ctx.shadowBlur = 8;
     this.ctx.shadowColor = '#00f5a0';
 
-    // Corner bracket markers for futuristic target look
-    // Top-Left
+    // Corner brackets
     this.ctx.beginPath();
     this.ctx.moveTo(minX, minY + cornerSize);
     this.ctx.lineTo(minX, minY);
     this.ctx.lineTo(minX + cornerSize, minY);
     this.ctx.stroke();
 
-    // Top-Right
     this.ctx.beginPath();
     this.ctx.moveTo(maxX - cornerSize, minY);
     this.ctx.lineTo(maxX, minY);
     this.ctx.lineTo(maxX, minY + cornerSize);
     this.ctx.stroke();
 
-    // Bottom-Left
     this.ctx.beginPath();
     this.ctx.moveTo(minX, maxY - cornerSize);
     this.ctx.lineTo(minX, maxY);
     this.ctx.lineTo(minX + cornerSize, maxY);
     this.ctx.stroke();
 
-    // Bottom-Right
     this.ctx.beginPath();
     this.ctx.moveTo(maxX - cornerSize, maxY);
     this.ctx.lineTo(maxX, maxY);
@@ -463,7 +577,6 @@ export class HandTracker {
     this.ctx.lineWidth = 1;
     this.ctx.setLineDash([6, 6]);
 
-    // Centered crosshair
     const cx = w / 2;
     const cy = h / 2;
     this.ctx.beginPath();
@@ -479,11 +592,9 @@ export class HandTracker {
     const h = this.canvasElement.height;
 
     this.ctx.save();
-    // Deep obsidian ambient grid
     this.ctx.fillStyle = '#0a0c14';
     this.ctx.fillRect(0, 0, w, h);
 
-    // Subtle holographic grid lines
     this.ctx.strokeStyle = 'rgba(139, 92, 246, 0.08)';
     this.ctx.lineWidth = 1;
     const step = 40;
@@ -500,7 +611,6 @@ export class HandTracker {
       this.ctx.stroke();
     }
 
-    // Watermark tag
     this.ctx.fillStyle = 'rgba(0, 245, 160, 0.4)';
     this.ctx.font = '11px monospace';
     this.ctx.fillText('SYNTHETIC DEMO SIMULATION', 18, h - 20);

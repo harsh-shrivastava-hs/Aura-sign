@@ -1,29 +1,41 @@
 /**
  * AuraSign - Main Application Controller
- * Orchestrates HandTracker, SignRecognizer, ReverseTranslator,
- * AudioFeedback, UI states, Sentence Accumulator, and Accessibility.
+ * Orchestrates HandTracker, SignRecognizer, GestureTutorial,
+ * ReverseTranslator, AudioFeedback, UI states, Sentence Accumulator, and Accessibility.
  */
 
 import { HandTracker } from './hand-tracker.js';
 import { SignRecognizer } from './sign-recognizer.js';
+import { GestureTutorial } from './gesture-tutorial.js';
 import { ReverseTranslator } from './reverse-translator.js';
 import { audioFeedback } from './audio-feedback.js';
 import { SIGN_DICTIONARY } from './sign-database.js';
 
 class AuraSignApp {
   constructor() {
-    // State
+    // Application State
     this.sentenceWords = [];
     this.signHistory = [];
     this.isMuted = false;
     this.isHighContrast = false;
     this.currentDetectedSign = null;
+    this.activeMode = 'translator'; // 'translator' | 'academy' | 'reverse'
 
-    // DOM Elements
+    // DOM Elements - Camera & Canvas
     this.videoEl = document.getElementById('webcam-video');
     this.canvasEl = document.getElementById('overlay-canvas');
     this.cameraSplashEl = document.getElementById('camera-splash');
     
+    // Top Mode Tabs
+    this.tabModeTranslator = document.getElementById('tab-mode-translator');
+    this.tabModeAcademy = document.getElementById('tab-mode-academy');
+    this.tabModeReverse = document.getElementById('tab-mode-reverse');
+
+    // Section containers
+    this.tutorialSectionContainer = document.getElementById('tutorial-section-container');
+    this.translatorSection = document.getElementById('translator-section');
+    this.reverseSection = document.querySelector('.bg-obsidian-card.rounded-2xl.p-5');
+
     // HUD elements
     this.hudStatusBadge = document.getElementById('hud-status-badge');
     this.hudStatusDot = document.getElementById('hud-status-dot');
@@ -57,6 +69,29 @@ class AuraSignApp {
     this.btnToggleMirror = document.getElementById('btn-toggle-mirror');
     this.btnToggleSkeleton = document.getElementById('btn-toggle-skeleton');
     this.labelSkeletonState = document.getElementById('label-skeleton-state');
+    this.btnToggleGhost = document.getElementById('btn-toggle-ghost');
+    this.labelGhostState = document.getElementById('label-ghost-state');
+
+    // 5-Finger Biomechanical Telemetry Badges
+    this.telemetryThumb = document.getElementById('telemetry-thumb');
+    this.telemetryThumbState = document.getElementById('telemetry-thumb-state');
+    this.telemetryThumbAngle = document.getElementById('telemetry-thumb-angle');
+
+    this.telemetryIndex = document.getElementById('telemetry-index');
+    this.telemetryIndexState = document.getElementById('telemetry-index-state');
+    this.telemetryIndexAngle = document.getElementById('telemetry-index-angle');
+
+    this.telemetryMiddle = document.getElementById('telemetry-middle');
+    this.telemetryMiddleState = document.getElementById('telemetry-middle-state');
+    this.telemetryMiddleAngle = document.getElementById('telemetry-middle-angle');
+
+    this.telemetryRing = document.getElementById('telemetry-ring');
+    this.telemetryRingState = document.getElementById('telemetry-ring-state');
+    this.telemetryRingAngle = document.getElementById('telemetry-ring-angle');
+
+    this.telemetryPinky = document.getElementById('telemetry-pinky');
+    this.telemetryPinkyState = document.getElementById('telemetry-pinky-state');
+    this.telemetryPinkyAngle = document.getElementById('telemetry-pinky-angle');
 
     // Sentence actions
     this.btnManualCommit = document.getElementById('btn-manual-commit');
@@ -105,13 +140,14 @@ class AuraSignApp {
   async init() {
     audioFeedback.init();
 
-    // 1. Initialize Sign Recognizer
+    // 1. Initialize Sign Recognizer with 3D Biomechanics & Telemetry
     this.recognizer = new SignRecognizer({
       holdDurationMs: 650,
       cooldownDurationMs: 1200,
       onSignDetected: (data) => this.handleSignDetected(data),
       onSignProgress: (data) => this.handleSignProgress(data),
-      onSignCommitted: (data) => this.handleSignCommitted(data)
+      onSignCommitted: (data) => this.handleSignCommitted(data),
+      onFingerTelemetry: (telemetry) => this.handleFingerTelemetry(telemetry)
     });
 
     // 2. Initialize Hand Tracker
@@ -136,28 +172,46 @@ class AuraSignApp {
 
     await this.tracker.init();
 
-    // 3. Initialize Reverse Translator
+    // 3. Initialize Interactive Gesture Tutorial / Academy
+    this.tutorial = new GestureTutorial({
+      container: this.tutorialSectionContainer,
+      onLessonChange: (lesson) => {
+        if (this.tracker) {
+          this.tracker.setGhostTarget(lesson.targetPreset);
+        }
+      },
+      onLessonComplete: (lesson) => {
+        this.showToast(`Lesson Complete: "${lesson.name}"! 🎓`, '🎉');
+      }
+    });
+
+    this.tutorial.render();
+
+    // 4. Initialize Reverse Translator
     this.reverseTranslator = new ReverseTranslator({
       container: this.flashcardsContainer,
       micStatusElement: this.micStatusBadge,
       transcriptDisplay: this.reverseTranscriptText,
-      onActiveCardChange: (card) => {
-        // Optional callback when active card updates
-      }
+      onActiveCardChange: (card) => {}
     });
 
     // Initial default demo cards in reverse translation panel
     this.reverseTranslator.translateTextToFlashcards("HELLO THANK YOU I LOVE YOU");
 
-    // 4. Setup event listeners & glossary
+    // 5. Setup event listeners & glossary
     this.setupEventListeners();
     this.populateGlossary();
 
     // Show initial welcome tip
-    this.showToast('AuraSign Ready! Start Camera or Launch Simulator.', '👋');
+    this.showToast('AuraSign 3D Neural Ready! Start camera or try Gesture Academy.', '👋');
   }
 
   setupEventListeners() {
+    // Mode Switcher Tabs
+    this.tabModeTranslator.addEventListener('click', () => this.switchMode('translator'));
+    this.tabModeAcademy.addEventListener('click', () => this.switchMode('academy'));
+    this.tabModeReverse.addEventListener('click', () => this.switchMode('reverse'));
+
     // Start / Toggle Camera
     const handleStartCam = async () => {
       audioFeedback.ensureContext();
@@ -227,6 +281,15 @@ class AuraSignApp {
       this.labelSkeletonState.textContent = this.tracker.showSkeleton ? 'ON' : 'OFF';
       this.labelSkeletonState.className = this.tracker.showSkeleton ? 'text-neon-mint font-semibold' : 'text-slate-500';
     });
+
+    // Ghost stencil toggle
+    if (this.btnToggleGhost) {
+      this.btnToggleGhost.addEventListener('click', () => {
+        this.tracker.showGhostHand = !this.tracker.showGhostHand;
+        this.labelGhostState.textContent = this.tracker.showGhostHand ? 'ON' : 'OFF';
+        this.labelGhostState.className = this.tracker.showGhostHand ? 'text-cyan-400 font-semibold' : 'text-slate-500';
+      });
+    }
 
     // Manual commit button
     this.btnManualCommit.addEventListener('click', () => {
@@ -329,9 +392,8 @@ class AuraSignApp {
       });
     });
 
-    // Keyboard Shortcuts
+    // Accessible Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
-      // Don't intercept if user is typing in the input box
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
       if (e.code === 'Space') {
@@ -350,10 +412,107 @@ class AuraSignApp {
         this.speakActiveSentence();
       } else if (e.key === 's' || e.key === 'S') {
         this.btnToggleCamera.click();
+      } else if (e.key === 't' || e.key === 'T') {
+        this.switchMode('academy');
       } else if (e.key === '?') {
         this.modalShortcuts.classList.toggle('hidden');
       }
     });
+  }
+
+  /**
+   * Switch Active Mode (Translator, Academy, Reverse)
+   */
+  switchMode(mode) {
+    this.activeMode = mode;
+
+    // Update tab styling
+    [this.tabModeTranslator, this.tabModeAcademy, this.tabModeReverse].forEach(tab => {
+      if (tab) {
+        tab.classList.remove('mode-tab-active');
+        tab.classList.add('text-slate-400');
+      }
+    });
+
+    if (mode === 'translator') {
+      this.tabModeTranslator.classList.add('mode-tab-active');
+      this.tabModeTranslator.classList.remove('text-slate-400');
+      if (this.tutorial.isActive) this.tutorial.stopTutorial();
+      this.tracker.setGhostTarget(null);
+      this.translatorSection.scrollIntoView({ behavior: 'smooth' });
+      this.showToast('Translator Mode Active', '📡');
+    } else if (mode === 'academy') {
+      this.tabModeAcademy.classList.add('mode-tab-active');
+      this.tabModeAcademy.classList.remove('text-slate-400');
+      this.tutorial.startTutorial();
+      this.tracker.setGhostTarget(this.tutorial.getCurrentLesson().targetPreset);
+      this.tutorialSectionContainer.scrollIntoView({ behavior: 'smooth' });
+      this.showToast('Gesture Academy Started! Align hand with stencil.', '🎓');
+      
+      // Auto start camera if not already active
+      if (!this.tracker.isCameraRunning && !this.tracker.isDemoMode) {
+        this.btnSplashStart.click();
+      }
+    } else if (mode === 'reverse') {
+      this.tabModeReverse.classList.add('mode-tab-active');
+      this.tabModeReverse.classList.remove('text-slate-400');
+      if (this.tutorial.isActive) this.tutorial.stopTutorial();
+      this.tracker.setGhostTarget(null);
+      const rev = document.getElementById('flashcards-container');
+      if (rev) rev.scrollIntoView({ behavior: 'smooth' });
+      this.showToast('Reverse Translation Active', '⚡');
+    }
+  }
+
+  /**
+   * Update real-time 5-finger telemetry HUD
+   */
+  handleFingerTelemetry(t) {
+    if (!t) {
+      ['thumb', 'index', 'middle', 'ring', 'pinky'].forEach(f => {
+        const stateEl = document.getElementById(`telemetry-${f}-state`);
+        const angleEl = document.getElementById(`telemetry-${f}-angle`);
+        const badgeEl = document.getElementById(`telemetry-${f}`);
+        if (stateEl) {
+          stateEl.textContent = '--';
+          stateEl.className = 'text-[11px] font-bold text-slate-500 mt-0.5';
+        }
+        if (angleEl) angleEl.textContent = '0°';
+        if (badgeEl) badgeEl.className = 'telemetry-badge p-1.5 rounded-lg border border-slate-800 bg-obsidian-dark flex flex-col items-center';
+      });
+      return;
+    }
+
+    // Pass live telemetry to Tutorial engine if active
+    if (this.tutorial && this.tutorial.isActive) {
+      this.tutorial.evaluateTelemetry(t);
+    }
+
+    // Helper to format finger status
+    const updateBadge = (name, isExt, angle, isThumb = false) => {
+      const stateEl = document.getElementById(`telemetry-${name}-state`);
+      const angleEl = document.getElementById(`telemetry-${name}-angle`);
+      const badgeEl = document.getElementById(`telemetry-${name}`);
+      if (!stateEl || !angleEl || !badgeEl) return;
+
+      const stateText = isExt ? (isThumb ? 'EXTEND' : 'OPEN') : 'CURL';
+      stateEl.textContent = stateText;
+      angleEl.textContent = `${angle}°`;
+
+      if (isExt) {
+        stateEl.className = 'text-[11px] font-bold text-neon-mint mt-0.5';
+        badgeEl.className = 'telemetry-badge p-1.5 rounded-lg border border-neon-mint/60 bg-neon-mint/10 flex flex-col items-center shadow-sm';
+      } else {
+        stateEl.className = 'text-[11px] font-bold text-violet-300 mt-0.5';
+        badgeEl.className = 'telemetry-badge p-1.5 rounded-lg border border-violet-700/50 bg-violet-950/20 flex flex-col items-center';
+      }
+    };
+
+    updateBadge('thumb', t.thumb.extended, t.thumb.abductionAngle, true);
+    updateBadge('index', t.index.extended, t.index.flexion);
+    updateBadge('middle', t.middle.extended, t.middle.flexion);
+    updateBadge('ring', t.ring.extended, t.ring.flexion);
+    updateBadge('pinky', t.pinky.extended, t.pinky.flexion);
   }
 
   /**
@@ -398,12 +557,10 @@ class AuraSignApp {
       return;
     }
 
-    // Show and update circular progress ring
     this.hudHoldContainer.style.opacity = '1';
     const offset = this.ringCircumference - (data.progress * this.ringCircumference);
     this.commitProgressRing.style.strokeDashoffset = offset;
 
-    // Linear progress bar in right typography panel
     this.holdProgressBar.style.width = `${Math.round(data.progress * 100)}%`;
 
     const pct = Math.round(data.progress * 100);
@@ -426,11 +583,9 @@ class AuraSignApp {
     this.updateSentenceDisplay();
     this.recordHistory(signName);
 
-    // Audio chime & visual celebration
     audioFeedback.playCommitChime();
     this.showToast(`Committed: "${signName}"`, '✓');
 
-    // Reset hold ring visual
     this.commitProgressRing.style.strokeDashoffset = this.ringCircumference;
     this.holdProgressBar.style.width = '0%';
     this.hudHoldContainer.style.opacity = '0';
@@ -495,14 +650,12 @@ class AuraSignApp {
     audioFeedback.speakText(
       text,
       () => {
-        // onStart
         this.ttsWaveContainer.classList.remove('hidden');
         this.ttsWaveContainer.classList.add('flex');
         this.ttsSpeakerIcon.classList.add('hidden');
         this.btnSpeakSentence.classList.add('ring-2', 'ring-neon-mint');
       },
       () => {
-        // onEnd
         this.ttsWaveContainer.classList.add('hidden');
         this.ttsWaveContainer.classList.remove('flex');
         this.ttsSpeakerIcon.classList.remove('hidden');

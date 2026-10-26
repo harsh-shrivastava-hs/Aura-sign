@@ -56,10 +56,10 @@
   <div class="fixed inset-0 cyber-scanline pointer-events-none z-50 opacity-40"></div>
 
   <!-- Header / Navigation Bar -->
-  <header class="border-b border-obsidian-border bg-obsidian-dark/90 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 py-3.5 flex items-center justify-between">
+  <header class="border-b border-obsidian-border bg-obsidian-dark/90 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
     <!-- Brand Info -->
-    <div class="flex items-center gap-3.5">
-      <div class="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-neon-mint p-0.5 shadow-neon-mint flex items-center justify-center">
+    <div class="flex items-center gap-3">
+      <div class="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-neon-mint p-0.5 shadow-neon-mint flex items-center justify-center shrink-0">
         <div class="w-full h-full bg-obsidian-deep rounded-[10px] flex items-center justify-center">
           <svg class="w-6 h-6 text-neon-mint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
@@ -74,20 +74,37 @@
           <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white font-mono flex items-center gap-1.5">
             Aura<span class="text-neon-mint">Sign</span>
           </h1>
-          <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded-full bg-violet-950 text-violet-300 border border-violet-700/50">
-            Neural v2.4
+          <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded-full bg-neon-mint/15 text-neon-mint border border-neon-mint/30">
+            3D Neural v2.5
           </span>
         </div>
-        <p class="text-xs text-slate-400 font-normal">Real-Time Sign Language Translator & Flashcard Engine</p>
+        <p class="text-xs text-slate-400 font-normal">Real-Time Sign Translator & Interactive Gesture Academy</p>
       </div>
     </div>
 
+    <!-- Central Mode Switcher Tabs -->
+    <div class="flex items-center p-1 rounded-xl bg-obsidian-card border border-slate-800 shadow-inner order-last md:order-none w-full md:w-auto justify-center gap-1">
+      <button id="tab-mode-translator" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition mode-tab-active flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        <span>Live Translator</span>
+      </button>
+      <button id="tab-mode-academy" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-neon-mint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>Gesture Academy</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-neon-mint animate-ping"></span>
+      </button>
+      <button id="tab-mode-reverse" class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"/></svg>
+        <span>Reverse Translation</span>
+      </button>
+    </div>
+
     <!-- Header Action Controls -->
-    <div class="flex items-center gap-2 sm:gap-3">
+    <div class="flex items-center gap-2">
       <!-- High Contrast Toggle (WCAG AAA) -->
       <button id="btn-contrast-toggle" class="px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-neon-mint bg-obsidian-card text-xs font-medium text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Toggle High Contrast Accessible Mode">
         <svg class="w-4 h-4 text-neon-mint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"/></svg>
-        <span class="hidden md:inline">High Contrast</span>
+        <span class="hidden xl:inline">High Contrast</span>
       </button>
 
       <!-- Audio Feedback Mute Toggle -->
@@ -99,7 +116,7 @@
       <!-- ASL Signs Glossary Button -->
       <button id="btn-glossary" class="px-3 py-1.5 rounded-lg border border-violet-600/60 bg-violet-950/40 hover:bg-violet-900/50 text-xs font-semibold text-violet-300 hover:text-white transition flex items-center gap-1.5">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-        <span>Signs Guide</span>
+        <span class="hidden sm:inline">Signs Guide</span>
       </button>
 
       <!-- Keyboard Shortcuts Help -->
@@ -109,11 +126,32 @@
     </div>
   </header>
 
+  <!-- Hero Feature Highlight Strip -->
+  <div class="border-b border-obsidian-border/80 bg-obsidian-panel/40 px-4 sm:px-6 py-2">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 overflow-x-auto text-[11px] font-mono text-slate-400 custom-scrollbar">
+      <div class="flex items-center gap-4 shrink-0">
+        <span class="flex items-center gap-1.5 text-neon-mint"><span class="w-1.5 h-1.5 rounded-full bg-neon-mint"></span> On-Device 3D Vision</span>
+        <span class="flex items-center gap-1.5 text-violet-300"><span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span> Biomechanical Flexion Angle Engine</span>
+        <span class="flex items-center gap-1.5 text-cyan-400"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> Holographic Ghost Stencil Tutor</span>
+      </div>
+      <div class="hidden sm:flex items-center gap-3 shrink-0">
+        <span class="text-slate-500">Zero Server Latency</span>
+        <span class="text-slate-500">•</span>
+        <span class="text-slate-400">WCAG AAA Accessible</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Content Layout -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
 
+    <!-- INTERACTIVE GESTURE ACADEMY / TUTORIAL CONTAINER -->
+    <div id="tutorial-section-container" class="w-full">
+      <!-- Populated dynamically by gesture-tutorial.js -->
+    </div>
+
     <!-- TOP SECTION: Two-Column Live Translator (Webcam Left / Dynamic Typography Right) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+    <div id="translator-section" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
       
       <!-- LEFT COLUMN: Live Camera Feed & Hand Tracking Canvas Overlay (7 Cols) -->
       <div class="lg:col-span-7 flex flex-col gap-3">
@@ -166,7 +204,7 @@
             </div>
             <h3 class="text-lg font-bold text-white mb-2">Connect Webcam to Begin</h3>
             <p class="text-xs text-slate-400 max-w-sm mb-5 leading-relaxed">
-              Position your hand in front of the camera. AuraSign will instantly track your joints and translate ASL gestures in real time.
+              Position your hand in front of the camera. AuraSign will instantly track your joints and translate ASL gestures with 3D biomechanical precision.
             </p>
             <div class="flex flex-wrap items-center justify-center gap-3">
               <button id="btn-splash-start" class="px-5 py-2.5 rounded-xl bg-neon-mint text-obsidian-deep font-bold text-xs tracking-wider uppercase hover:bg-neon-mint-dim transition shadow-neon-mint flex items-center gap-2">
@@ -217,6 +255,53 @@
             <button id="btn-toggle-skeleton" class="px-2 py-1 rounded-lg bg-obsidian-panel border border-slate-800 text-[11px] text-slate-300 hover:text-white transition" title="Toggle Skeleton Lines">
               Skeleton: <span id="label-skeleton-state" class="text-neon-mint font-semibold">ON</span>
             </button>
+            <button id="btn-toggle-ghost" class="px-2 py-1 rounded-lg bg-obsidian-panel border border-slate-800 text-[11px] text-slate-300 hover:text-white transition" title="Toggle Tutorial Target Stencil">
+              Stencil: <span id="label-ghost-state" class="text-cyan-400 font-semibold">ON</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5-FINGER BIOMECHANICAL TELEMETRY HUD -->
+        <div class="bg-obsidian-card p-3 rounded-xl border border-obsidian-border">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-semibold flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-neon-mint"></span>
+              Real-Time Finger Joint Telemetry
+            </span>
+            <span class="text-[10px] font-mono text-slate-500">Live 3D Flexion Angles</span>
+          </div>
+
+          <div class="grid grid-cols-5 gap-1.5 text-center font-mono">
+            <!-- Thumb -->
+            <div id="telemetry-thumb" class="telemetry-badge p-1.5 rounded-lg border border-slate-800 bg-obsidian-dark flex flex-col items-center">
+              <span class="text-[10px] text-slate-400">THUMB</span>
+              <span id="telemetry-thumb-state" class="text-[11px] font-bold text-slate-500 mt-0.5">--</span>
+              <span id="telemetry-thumb-angle" class="text-[9px] text-slate-500">0°</span>
+            </div>
+            <!-- Index -->
+            <div id="telemetry-index" class="telemetry-badge p-1.5 rounded-lg border border-slate-800 bg-obsidian-dark flex flex-col items-center">
+              <span class="text-[10px] text-slate-400">INDEX</span>
+              <span id="telemetry-index-state" class="text-[11px] font-bold text-slate-500 mt-0.5">--</span>
+              <span id="telemetry-index-angle" class="text-[9px] text-slate-500">0°</span>
+            </div>
+            <!-- Middle -->
+            <div id="telemetry-middle" class="telemetry-badge p-1.5 rounded-lg border border-slate-800 bg-obsidian-dark flex flex-col items-center">
+              <span class="text-[10px] text-slate-400">MIDDLE</span>
+              <span id="telemetry-middle-state" class="text-[11px] font-bold text-slate-500 mt-0.5">--</span>
+              <span id="telemetry-middle-angle" class="text-[9px] text-slate-500">0°</span>
+            </div>
+            <!-- Ring -->
+            <div id="telemetry-ring" class="telemetry-badge p-1.5 rounded-lg border border-slate-800 bg-obsidian-dark flex flex-col items-center">
+              <span class="text-[10px] text-slate-400">RING</span>
+              <span id="telemetry-ring-state" class="text-[11px] font-bold text-slate-500 mt-0.5">--</span>
+              <span id="telemetry-ring-angle" class="text-[9px] text-slate-500">0°</span>
+            </div>
+            <!-- Pinky -->
+            <div id="telemetry-pinky" class="telemetry-badge p-1.5 rounded-lg border border-slate-800 bg-obsidian-dark flex flex-col items-center">
+              <span class="text-[10px] text-slate-400">PINKY</span>
+              <span id="telemetry-pinky-state" class="text-[11px] font-bold text-slate-500 mt-0.5">--</span>
+              <span id="telemetry-pinky-angle" class="text-[9px] text-slate-500">0°</span>
+            </div>
           </div>
         </div>
 
@@ -227,6 +312,7 @@
         
         <!-- ACTIVE LIVE SIGN DISPLAY (Futuristic Hero Typography) -->
         <div class="relative bg-gradient-to-br from-obsidian-card to-obsidian-panel p-5 rounded-2xl border border-obsidian-border shadow-xl flex flex-col justify-between min-h-[220px]">
+
           
           <!-- Panel Header -->
           <div class="flex items-center justify-between">

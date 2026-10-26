@@ -167,3 +167,55 @@ body.high-contrast .bg-obsidian-card {
 #toast-notification {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Biomechanical Telemetry Finger Badges */
+.telemetry-badge {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.telemetry-badge.state-extended {
+  border-color: rgba(0, 245, 160, 0.6);
+  background-color: rgba(0, 245, 160, 0.08);
+}
+
+.telemetry-badge.state-curled {
+  border-color: rgba(139, 92, 246, 0.5);
+  background-color: rgba(139, 92, 246, 0.08);
+}
+
+/* Mode Switcher Glow & Tabs */
+.mode-tab-active {
+  background: linear-gradient(135deg, rgba(0, 245, 160, 0.15), rgba(139, 92, 246, 0.15));
+  border-color: var(--accent-mint) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px -2px rgba(0, 245, 160, 0.3);
+}
+
+/* Ghost Hand Stencil Keyframe */
+@keyframes ghostPulse {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.02);
+  }
+}
+
+.ghost-stencil-pulse {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+/* Confetti Burst */
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
