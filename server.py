@@ -11,6 +11,14 @@ import os
 import sys
 import socket
 
+# Optional PayPal Sandbox Backend Integration (Isolated module for easy removal)
+try:
+    from paypal_backend import handle_paypal_request, is_paypal_enabled
+except ImportError:
+    handle_paypal_request = None
+    def is_paypal_enabled():
+        return False
+
 DEFAULT_PORT = 8080
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
@@ -49,6 +57,28 @@ class AuraSignRequestHandler(http.server.SimpleHTTPRequestHandler):
         if len(args) > 1 and str(args[1]).startswith(('4', '5')):
             sys.stderr.write(f"[{self.log_date_time_string()}] {format % args}\n")
 
+    def do_OPTIONS(self):
+        # Handle CORS pre-flight requests cleanly
+        self.send_response(204)
+        self.end_headers()
+
+    def do_GET(self):
+        # Route PayPal API endpoints if present
+        if self.path.startswith('/api/paypal'):
+            if handle_paypal_request and handle_paypal_request(self, 'GET', self.path):
+                return
+        super().do_GET()
+
+    def do_POST(self):
+        # Route PayPal API endpoints
+        if self.path.startswith('/api/paypal'):
+            if handle_paypal_request and handle_paypal_request(self, 'POST', self.path):
+                return
+        self.send_response(404)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(b'{"error": "Endpoint not found"}')
+
 def find_available_port(start_port=DEFAULT_PORT, max_attempts=20):
     for port in range(start_port, start_port + max_attempts):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -61,6 +91,16 @@ def print_banner(port, url):
     mint = "\033[92m" if os.name != 'nt' or 'WT_SESSION' in os.environ else ""
     violet = "\033[95m" if os.name != 'nt' or 'WT_SESSION' in os.environ else ""
     reset = "\033[0m" if os.name != 'nt' or 'WT_SESSION' in os.environ else ""
+
+    paypal_status = f"{mint}ENABLED (Sandbox){reset}" if is_paypal_enabled() else f"{violet}DISABLED{reset}"
+    print(f"\n{mint}======================================================{reset}")
+    print(f"{mint}* AuraSign - Local High-Performance Neural Server *{reset}")
+    print(f"{mint}======================================================{reset}")
+    print(f" - Local URL:        {cyan}{url}{reset}")
+    print(f" - PayPal Support:   {paypal_status}")
+    print(f" - Static Directory: {DIRECTORY}")
+    print(f"{mint}------------------------------------------------------{reset}")
+    print(f" Press Ctrl+C to terminate server.\n")
 
 def run_server(port=None, auto_open=True):
     actual_port = find_available_port(port or DEFAULT_PORT)

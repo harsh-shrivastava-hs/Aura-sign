@@ -119,6 +119,12 @@
         <span class="hidden sm:inline">Signs Guide</span>
       </button>
 
+      <!-- Support AuraSign Button (Temporary Sandbox Module - hidden by default unless enabled) -->
+      <button id="btn-header-support" class="hidden px-3 py-1.5 rounded-lg border border-neon-mint/50 bg-neon-mint/10 hover:bg-neon-mint/20 text-xs font-semibold text-neon-mint transition flex items-center gap-1.5" title="Support AuraSign via PayPal Sandbox">
+        <svg class="w-4 h-4 text-neon-mint" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        <span class="hidden sm:inline">Support</span>
+      </button>
+
       <!-- Keyboard Shortcuts Help -->
       <button id="btn-shortcuts" class="p-2 rounded-lg border border-slate-700 hover:border-slate-500 bg-obsidian-card text-slate-400 hover:text-white transition" title="View Keyboard Shortcuts">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -493,6 +499,113 @@
 
     </div>
 
+    <!-- ========================================================================= -->
+    <!-- [PAYPAL INTEGRATION: SUPPORT AURASIGN] (ISOLATED TEMPORARY SANDBOX MODULE) -->
+    <!-- ========================================================================= -->
+    <section id="support-aurasign-section" class="bg-obsidian-card rounded-2xl border border-obsidian-border p-5 sm:p-6 shadow-2xl flex flex-col gap-5 hidden transition-all duration-300">
+      
+      <!-- Section Header with Badges -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="w-2.5 h-2.5 rounded-full bg-neon-mint"></div>
+            <h2 class="text-lg sm:text-xl font-bold text-white font-mono tracking-tight">
+              Support AuraSign <span class="text-neon-mint text-sm font-sans font-normal">(PayPal Sandbox Checkout)</span>
+            </h2>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+              Sandbox Test Mode
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            AuraSign is free, open-source, and fully functional without payment. You can simulate a test contribution using PayPal Sandbox. No real money or payment accounts are charged.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-obsidian-panel border border-slate-800 text-xs font-mono self-start sm:self-auto">
+          <span class="text-slate-400">Environment:</span>
+          <span class="text-amber-400 font-bold">PayPal Sandbox</span>
+        </div>
+      </div>
+
+      <!-- Main Interaction Grid (Left: Amount Selector / Right: Checkout Area) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- LEFT: Amount Selector (7 Cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-4">
+          <div>
+            <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">
+              Select Test Contribution Amount
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button type="button" data-amount="3.00" class="paypal-preset-btn py-2.5 px-3 rounded-xl border border-slate-700 bg-obsidian-panel text-slate-300 font-mono text-sm hover:border-neon-mint hover:text-white transition flex flex-col items-center justify-center">
+                <span class="font-bold">$3.00</span>
+                <span class="text-[10px] text-slate-500">Coffee</span>
+              </button>
+              <button type="button" data-amount="5.00" class="paypal-preset-btn py-2.5 px-3 rounded-xl border border-neon-mint bg-neon-mint/15 text-neon-mint font-mono text-sm font-bold transition flex flex-col items-center justify-center">
+                <span>$5.00</span>
+                <span class="text-[10px] text-neon-mint/70">Support</span>
+              </button>
+              <button type="button" data-amount="10.00" class="paypal-preset-btn py-2.5 px-3 rounded-xl border border-slate-700 bg-obsidian-panel text-slate-300 font-mono text-sm hover:border-neon-mint hover:text-white transition flex flex-col items-center justify-center">
+                <span class="font-bold">$10.00</span>
+                <span class="text-[10px] text-slate-500">Booster</span>
+              </button>
+              <button type="button" data-amount="25.00" class="paypal-preset-btn py-2.5 px-3 rounded-xl border border-slate-700 bg-obsidian-panel text-slate-300 font-mono text-sm hover:border-neon-mint hover:text-white transition flex flex-col items-center justify-center">
+                <span class="font-bold">$25.00</span>
+                <span class="text-[10px] text-slate-500">Champion</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Amount Input -->
+          <div class="flex flex-col gap-1.5">
+            <label for="paypal-custom-amount" class="text-xs font-mono text-slate-400">
+              Or Custom Amount (USD $1.00 – $500.00):
+            </label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-slate-500 font-mono text-sm">$</span>
+              <input type="number" id="paypal-custom-amount" min="1.00" max="500.00" step="0.50" placeholder="5.00" class="w-full pl-8 pr-16 py-2.5 rounded-xl bg-obsidian-dark border border-slate-700/80 text-white font-mono text-sm focus:border-neon-mint focus:outline-none transition">
+              <span class="absolute right-3.5 text-slate-500 font-mono text-xs uppercase">USD</span>
+            </div>
+          </div>
+
+          <!-- Selected Amount Confirmation Pill -->
+          <div class="flex items-center justify-between p-3 rounded-xl bg-obsidian-panel/80 border border-slate-800 text-xs font-mono">
+            <span class="text-slate-400">Target Contribution:</span>
+            <span id="paypal-selected-amount-display" class="font-bold text-neon-mint text-sm">$5.00 USD</span>
+          </div>
+
+          <!-- Sandbox Instruction Hint -->
+          <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] font-mono text-amber-200/90 leading-relaxed">
+            <strong class="text-amber-400">Testing Guide:</strong> In the PayPal modal, log in with a PayPal Sandbox Personal Buyer account. The order is created and captured strictly through the AuraSign backend.
+          </div>
+        </div>
+
+        <!-- RIGHT: PayPal Button & Transaction Status (5 Cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-3">
+          <label class="block text-xs font-mono uppercase tracking-wider text-slate-400">
+            Complete Sandbox Contribution
+          </label>
+
+          <!-- Feedback Status Notifications (Loading / Success / Error / Cancel) -->
+          <div id="paypal-feedback-container" class="hidden flex flex-col gap-2"></div>
+
+          <!-- PayPal Button Render Container -->
+          <div class="p-4 rounded-xl bg-obsidian-panel border border-slate-800 flex flex-col items-center justify-center">
+            <div id="paypal-button-container" class="w-full min-h-[45px] relative z-10"></div>
+            <p class="text-[10px] text-slate-500 font-mono mt-3 text-center">
+              🔒 Powered by PayPal Developer Platform • Sandbox Isolation
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+    <!-- ========================================================================= -->
+    <!-- [END PAYPAL INTEGRATION] -->
+    <!-- ========================================================================= -->
+
   </main>
 
   <!-- Footer -->
@@ -587,5 +700,8 @@
 
   <!-- Main JavaScript App Coordinator -->
   <script type="module" src="js/app.js"></script>
+
+  <!-- Optional PayPal Sandbox Integration (Hackathon temporary module) -->
+  <script type="module" src="js/paypal.js"></script>
 </body>
 </html>

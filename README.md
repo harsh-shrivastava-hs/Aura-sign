@@ -92,8 +92,80 @@ d:\Aurasign-project\
 │   ├── gesture-tutorial.js    # Interactive Gesture Academy, AI coaching & lessons
 │   ├── reverse-translator.js  # Speech-to-Text & visual sign flashcards player
 │   ├── sign-database.js       # ASL dictionary, SVG diagrams & synthetic presets
-│   └── audio-feedback.js      # Web Audio synthesizer & Text-to-Speech engine
-├── server.py                  # Local Python server with CORS, MIME types & auto-open
+│   ├── audio-feedback.js      # Web Audio synthesizer & Text-to-Speech engine
+│   └── paypal.js              # PayPal Sandbox frontend manager (SDK loading & state)
+├── server.py                  # Local Python server with CORS, MIME types, & PayPal routing
+├── paypal_backend.py          # PayPal OAuth2, order creation & capture verification
+├── .env                       # Local secrets (PAYPAL_CLIENT_ID, SECRET, ENABLE_PAYPAL)
+├── .env.example               # Template environment configuration
 ├── start.bat                  # One-click Windows startup script
 └── README.md                  # Project documentation
 ```
+
+---
+
+## 💳 PayPal Sandbox Integration ("Support AuraSign")
+
+AuraSign includes an optional **Support AuraSign** module using the **PayPal Developer Platform (Sandbox)**. This satisfies hackathon technology requirements while ensuring the core sign language translator remains **100% free, unblocked, and functional** independently of PayPal.
+
+### 1. How It Works
+- **Zero Frontend Secrets**: Only the public Client ID is shared with the frontend. The `PAYPAL_CLIENT_SECRET` is kept strictly on the Python backend.
+- **Backend Order Creation & Capture**: Orders are created via PayPal Orders v2 API with server-side validation. Approval is confirmed and captured on the backend with payment verification and duplicate capture prevention.
+- **Dynamic SDK Loading**: The PayPal JS SDK is only fetched if PayPal is enabled.
+
+### 2. Obtaining PayPal Sandbox Credentials
+1. Go to the [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/).
+2. Log in with your PayPal developer credentials.
+3. Under **Apps & Credentials**, select the **Sandbox** tab.
+4. Click **Create App**, give it a name (e.g. `AuraSign-Sandbox`), and click **Create App**.
+5. Copy your **Client ID** and **Secret Key**.
+6. Under **Testing Tools > Sandbox Accounts**, note your auto-generated **Sandbox Personal Account** (buyer) and **Sandbox Business Account** (merchant).
+
+### 3. Environment Variable Configuration
+Copy `.env.example` to `.env`:
+```powershell
+copy .env.example .env
+```
+Configure your credentials in `.env`:
+```env
+PAYPAL_CLIENT_ID=YOUR_SANDBOX_CLIENT_ID
+PAYPAL_CLIENT_SECRET=YOUR_SANDBOX_CLIENT_SECRET
+PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
+ENABLE_PAYPAL=true
+```
+
+### 4. Running the Application
+```powershell
+python server.py
+```
+Or double-click `start.bat`.
+
+### 5. Testing PayPal Sandbox Payments
+1. Open `http://localhost:8080`.
+2. Scroll to the **Support AuraSign** section (or click **Support** in the top navigation).
+3. Select an amount (e.g., `$5.00`) or input a custom amount ($1.00 – $500.00).
+4. Click the yellow **PayPal Checkout** button.
+5. In the PayPal Sandbox popup window, log in with your **Sandbox Personal Account** credentials.
+6. Click **Complete Purchase** / **Pay Now**.
+7. Observe the server-side verification: the UI updates to show **Thank You For Supporting AuraSign!** with the verified Order ID, Capture ID, and amount.
+8. Core translation, Academy, and speech recognition features continue to operate normally throughout.
+
+### 6. How to Disable PayPal
+To completely disable PayPal without modifying code, set:
+```env
+ENABLE_PAYPAL=false
+```
+When disabled:
+- The Support AuraSign section and header button remain completely hidden.
+- The PayPal JavaScript SDK is **never loaded**.
+- PayPal backend endpoints return HTTP 403 / disabled.
+- The terminal indicates `• PayPal Support: DISABLED`.
+- Every core feature of AuraSign continues to function with zero console errors.
+
+### 7. How to Completely Remove PayPal Integration (Post-Hackathon)
+Because PayPal integration is strictly isolated in dedicated modules, removal is trivial:
+1. **Delete backend service**: Delete `paypal_backend.py`.
+2. **Delete frontend module**: Delete `js/paypal.js`.
+3. **Clean up `server.py`**: Remove the `try...from paypal_backend` block and the `/api/paypal` routing conditions (or leave `server.py` as is, since its import fallback prevents crashes).
+4. **Clean up `index.html`**: Delete the `<section id="support-aurasign-section">` block, the `#btn-header-support` button, and the `<script type="module" src="js/paypal.js"></script>` tag.
+5. **Delete `.env` PayPal keys**: Remove `PAYPAL_*` and `ENABLE_PAYPAL` from `.env`.
